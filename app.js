@@ -1,4 +1,5 @@
-const createRequest = require('./index').createRequest
+require('dotenv').config();
+const createRequest = require('./ns-claim').createRequest
 
 const express = require('express')
 const bodyParser = require('body-parser')

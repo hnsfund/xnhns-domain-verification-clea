@@ -9,7 +9,11 @@
     "start": "node app.js"
   },
   "dependencies": {
-    "@chainlink/external-adapter": "^0.2.3"
+    "@chainlink/external-adapter": "^0.2.3",
+    "dotenv": "^8.2.0",
+    "hdns": "^0.7.0",
+    "hs-client": "^0.0.9",
+    "hsd": "^2.3.0"
   },
   "devDependencies": {
     "body-parser": "^1.19.0",
