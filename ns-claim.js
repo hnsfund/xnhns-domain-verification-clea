@@ -18,7 +18,7 @@ const client = new NodeClient(clientOptions);
 const customParams = {
   tld: true,
   namespace: true, // TODO change bc confusing using NS for namespace and nameserver.
-  nsRecord: true,
+  registry: true,
 }
 const NULL_ADDRESS = Number(0).toString(16); // null address 0x0 in bytes for ethereum
 const INVALID_TLD_RESPONSE = { status: 200, data: { result: NULL_ADDRESS } }
@@ -27,9 +27,9 @@ const createRequest = async (input, callback) => {
   // The Validator helps you validate the Chainlink request data
   const validator = new Validator(callback, input, customParams)
   const jobRunID = validator.validated.id
-  const { tld, namespace, nsRecord } = validator.validated.data
+  const { tld, namespace, registry } = validator.validated.data
   const claimPrefix = 'xnhns=',
-        nsSuffix = `._${namespace}`;
+        nsSuffix = `._${namespace}.`;
 
   console.log('retrieving txt records for tld...', tld, namespace);
 
@@ -52,7 +52,7 @@ const createRequest = async (input, callback) => {
 
   console.log('NS record ', nsRecords);
 
-  if(!nsRecords[0].ns === nsRecord) {
+  if(!nsRecords[0].ns === registry + nsSuffix) {
     return callback(
       INVALID_TLD_RESPONSE.status,
       Requester.success(jobRunID, INVALID_TLD_RESPONSE)

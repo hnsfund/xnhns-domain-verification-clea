@@ -1,47 +1,35 @@
-# Chainlink NodeJS External Adapter Template
+# XNHNS Chainlink NodeJS External Adapter 
 
-External adapter for verifying HNS domains against a provided nonce.
-`doh.js` uses DNS over HTTPS to query records against an SPV node
-`rpc.js` sends an RPC call to a full node to query onchain records
-## Creating your own adapter from this template
+## Adapters 
+`ns-claim.js` - Used by XNHNS registrars to verify a TLD is following [HIP-05](https://github.com/handshake-org/HIPs/blob/master/HIP-0005.md) and pointed to the appropriate nameserver. If correct it retrieves the ETH address associated with that TLD and submits on chain as the owner.
 
-Clone this repo and change "ExternalAdapterProject" below to the name of your project
+In the CL job spec we only specify the TLD we want to get an address from, we don't say how to look up that domain or parse the address. This lets nodes create their own implementations for verifying domains (e.g. merkle proofs) so there redundancy in the network.
 
-```bash
-git clone https://github.com/thodges-gh/CL-EA-NodeJS-Template.git ExternalAdapterProject
+## Input
+```json
+{
+  "tld": "testingtld",
+  "namespace": "eth",
+  "registry": "0x36fc69f0983E536D1787cC83f481581f22CCA2A1"
+}
 ```
-
-Enter into the newly-created directory
-
-```bash
-cd ExternalAdapterProject
-```
-
-You can remove the existing git history by running:
-
-```bash
-rm -rf .git
-```
-
-See [Install Locally](#install-locally) for a quickstart
-
-## Input Params
-
-- `base`, `from`, or `coin`: The symbol of the currency to query
-- `quote`, `to`, or `market`: The symbol of the currency to convert to
-
 ## Output
 
 ```json
 {
  "jobRunID": "278c97ffadb54a5bbb93cfec5f7b5503",
  "data": {
-  "USD": 164.02,
-  "result": 164.02
+  "owner": "0x36fc69f0983E536D1787cC83f481581f22CCA2A1",
+  "result": "0x36fc69f0983E536D1787cC83f481581f22CCA2A1"
  },
  "statusCode": 200
 }
 ```
+
+`nonce-challenge` - DEPRECATED. Early TLD verification method before HIP-05 and `ns-claim` adapter.
+
+`check-tx` - Used by XNHNS crosschain NFTLD sales contract to verify a tx with the given parameters was mined on the Handshake blockchain.
+
 
 ## Install Locally
 
