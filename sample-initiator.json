@@ -1,0 +1,16 @@
+{
+  "initiators": [
+    {
+      "type": "runlog",
+      "params": {
+        "address" : "0xE0C0572EA405aa6D6B05067B8Ab34aca9197157D"
+      }
+    }
+  ],
+  "tasks": [
+    { "type": "xnhns-domain-verification" },
+    { "type": "ethtx" }
+  ],
+  "minPayment": "0"
+}
+ 

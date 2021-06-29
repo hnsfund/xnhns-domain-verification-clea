@@ -17,8 +17,8 @@ const client = new NodeClient(clientOptions);
 
 const customParams = {
   tld: true,
-  ns: true, // TODO change bc confusing using NS for namespace and nameserver.
-  checkNS: false,
+  namespace: true, // TODO change bc confusing using NS for namespace and nameserver.
+  nsRecord: true,
 }
 const NULL_ADDRESS = Number(0).toString(16); // null address 0x0 in bytes for ethereum
 const INVALID_TLD_RESPONSE = { status: 200, data: { result: NULL_ADDRESS } }
@@ -27,48 +27,53 @@ const createRequest = async (input, callback) => {
   // The Validator helps you validate the Chainlink request data
   const validator = new Validator(callback, input, customParams)
   const jobRunID = validator.validated.id
-  const { tld, ns, checkNS } = validator.validated.data
+  const { tld, namespace, nsRecord } = validator.validated.data
   const claimPrefix = 'xnhns=',
-        nsSuffix = `.${ns}`;
+        nsSuffix = `._${namespace}`;
 
-  console.log('retrieving txt records for tld...', tld, ns);
+  console.log('retrieving txt records for tld...', tld, namespace);
 
   const result = await client.execute('getnameresource', [ tld ]);
   if(!result) // tld does not exist
     return callback(INVALID_TLD_RESPONSE.status, INVALID_TLD_RESPONSE)
-  
-  const xnhnsClaimRecord = result.records.find(r =>
-    r.type == "TXT" && r.txt[0].startsWith(claimPrefix) && r.txt[0].endsWith(nsSuffix))
-  
-  console.log('claim record : ', xnhnsClaimRecord);
+
   if(!xnhnsClaimRecord) // tld not claimed
     return callback(INVALID_TLD_RESPONSE.status, INVALID_TLD_RESPONSE)
   
-  // pull network address from inbetweeen standard config
-  const claimAddr = xnhnsClaimRecord.txt[0].slice(claimPrefix.length, nsSuffix.length * -1)
-  console.log('claim addr : ', claimAddr);
-  // coerce to boolean from CL job string param
-  const doNSCheck = Boolean(Number(checkNS || 0))
-  const validResponse = { status: 200, data: { result: claimAddr } }
-  
-  // if has TXT record for namespace + dont need to verify nameserver is pointing at namespace
-  if(claimAddr && !doNSCheck) {
-    return callback(validResponse.status, Requester.success(jobRunID, validResponse))
-  }
-
   console.log('checking correct NS before confirmig addr...');
-  
-  const nsRecord = result.records.find(r => r.type === "NS" && r.ns.endsWith(nsSuffix+'.'))
-
-  console.log('NS with NS ', nsRecord);
-
-  if(!nsRecord) {
+  const nsRecords = result.records.filter(r => r.type === "NS")
+  if(nsRecords.length > 1) {
+    // can only delegate to one NS, invalid TLD
     return callback(
       INVALID_TLD_RESPONSE.status,
       Requester.success(jobRunID, INVALID_TLD_RESPONSE)
     )
   }
 
+  console.log('NS record ', nsRecords);
+
+  if(!nsRecords[0].ns === nsRecord) {
+    return callback(
+      INVALID_TLD_RESPONSE.status,
+      Requester.success(jobRunID, INVALID_TLD_RESPONSE)
+    )
+  }
+
+  const xnhnsClaimRecord = result.records.find(r =>
+    r.type == "TXT" &&
+    r.txt[0].startsWith(claimPrefix) &&
+    r.txt[0].endsWith(nsSuffix))
+  
+  console.log('claim record : ', xnhnsClaimRecord);
+
+  // pull network address from inbetweeen standard config
+  const claimAddr = xnhnsClaimRecord.txt[0].slice(
+    claimPrefix.length,
+    nsSuffix.length * -1 // cutoff end of string
+  )
+  console.log('claim addr : ', claimAddr);
+  
+  const validResponse = { status: 200, data: { result: claimAddr } }
   return callback(validResponse.status, Requester.success(jobRunID, validResponse))
 }
 
